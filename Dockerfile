@@ -35,3 +35,5 @@ RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - \
 RUN npm install -g yarn
 
 USER runner
+
+CMD ["bash", "-c", "./start.sh; sleep infinity"]
