@@ -36,4 +36,4 @@ RUN npm install -g yarn
 
 USER runner
 
-CMD ["bash", "-c", "./start.sh; sleep infinity"]
+CMD /start.sh ; sleep infinity
