@@ -11,7 +11,8 @@ ENV PACKAGES="php7.2-fpm \
     php7.2-redis \
     php7.2-mbstring \
     php7.2-bcmath \
-    php-mail-mime"
+    php-mail-mime \
+    rsync"
 
 USER root
 
