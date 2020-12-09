@@ -27,7 +27,7 @@ RUN usermod -aG docker runner
 RUN curl -o /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg \
     && sh -c 'echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list' \
     && apt-get update && apt-get install -y -q $PACKAGES \
-    && apt-get clean                        \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 RUN curl -k -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin/ \
@@ -39,6 +39,12 @@ RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - \
     && apt-get install -y -q nodejs \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+### AWS CLI ###
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+    && unzip awscliv2.zip \
+    && ./aws/install \
+    && rm -rf ./aws awscliv2.zip
 
 RUN npm install -g yarn
 
