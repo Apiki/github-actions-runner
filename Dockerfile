@@ -17,6 +17,12 @@ ENV PACKAGES="php7.2-fpm \
 
 USER root
 
+### PERMISSION TO RUN CONTAINERS ###
+RUN groupadd -g 993 docker
+
+RUN usermod -aG docker runner
+
+
 ### PHP ###
 RUN curl -o /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg \
     && sh -c 'echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list' \
