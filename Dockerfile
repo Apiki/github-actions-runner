@@ -48,6 +48,14 @@ RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2
 
 RUN npm install -g yarn
 
+### Fix to use actions/setup-python ###
+ENV AGENT_TOOLSDIRECTORY=/opt/hostedtoolcache
+RUN mkdir -p /opt/hostedtoolcache \
+    && mkdir -p _work \
+    && ln -s /opt/hostedtoolcache _work/_tool \
+    && chown -R runner:runner /opt _work
+ADD ./lsb-release /etc
+
 USER runner
 
 CMD /start.sh ; sleep infinity
