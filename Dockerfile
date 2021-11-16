@@ -14,7 +14,8 @@ ENV PACKAGES="php7.4-fpm \
     php7.4-xml \
     php-mail-mime \
     rsync \
-    pssh"
+    pssh \
+    php7.4-phpdbg"
 
 USER root
 
