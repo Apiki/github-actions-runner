@@ -16,7 +16,8 @@ ENV PACKAGES="php7.4-fpm \
     rsync \
     pssh \
     php7.4-phpdbg \
-    php7.4-zip"
+    php7.4-zip \
+    libargon2-1 libidn2-0 libpcre2-8-0 libpcre3 libxml2 libzstd1"
 
 USER root
 
@@ -25,7 +26,6 @@ RUN groupadd -g 993 docker
 
 RUN usermod -aG docker runner
 
-
 ### PHP ###
 RUN curl -o /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg \
     && sh -c 'echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list' \
@@ -33,8 +33,8 @@ RUN curl -o /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl -k -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin/ \
-    && ln -s /usr/local/bin/composer.phar /usr/local/bin/composer
+### COMPOSER ###
+COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 
 ### NODE ###
 RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - \
