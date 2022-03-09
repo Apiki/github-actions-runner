@@ -59,6 +59,10 @@ RUN mkdir -p /opt/hostedtoolcache \
     && chown -R runner:runner /opt _work
 ADD ./lsb-release /etc
 
+### Override docker-compose version
+RUN curl -L "https://github.com/docker/compose/releases/download/1.28.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
+    && chmod +x /usr/local/bin/docker-compose
+
 USER runner
 
 CMD /start.sh ; sleep infinity
