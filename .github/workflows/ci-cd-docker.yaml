@@ -72,7 +72,7 @@ jobs:
       if: github.ref == 'refs/heads/master' 
       run: |
         scp -P ${SSH_PORT} Dockerfile ${SSH_USER}@${SSH_IP}:${RUNNERS_PATH}
-        ssh -oStrictHostKeyChecking=no -p ${SSH_PORT} ${SSH_USER}@${SSH_IP} "sudo docker build -t ${{ env.CI_REGISTRY_IMAGE }}/${{ env.CONTAINER_NAME }}:${{ steps.vars.outputs.image_tag }} /opt/github-runner/."
+        ssh -oStrictHostKeyChecking=no -p ${SSH_PORT} ${SSH_USER}@${SSH_IP} "sudo docker build -t ${{ env.CI_REGISTRY_IMAGE }}/${{ env.CONTAINER_NAME }}:${{ steps.vars.outputs.image_tag }} ${RUNNERS_PATH}/."
 
     - name: Down Old Containers
       if: github.ref == 'refs/heads/master' 

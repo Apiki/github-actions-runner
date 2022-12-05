@@ -7,7 +7,7 @@ services:
       RUN_AS_ROOT: true
       REPO_URL: https://github.com/Apiki
       RUNNER_NAME: gh-runner-1
-      RUNNER_TOKEN: ATMR4IH652GLP2LL7L56NLLDRI43S
+      RUNNER_TOKEN: ATMR4ICIBCW3EU44Z2CKQWDDRYMG2
       RUNNER_WORKDIR: /tmp/runner/gh-runner-1
       LABELS: linux,x64,self-hosted
     restart: always
