@@ -1,8 +1,9 @@
-# Github-Actions-Runner
+# Github Actions Runner
 
 ## Requirements
 
-1. Docker compose
+1. [Docker Compose](https://docs.docker.com/compose/gettingstarted/)
+2. [Github Runner](https://github.com/organizations/Apiki/settings/actions/runners)
 
 ## Start Runners
 
