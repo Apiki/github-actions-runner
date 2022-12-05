@@ -1,19 +1,17 @@
-# github-actions-runner
+# Github-Actions-Runner
 
 ## Requirements
 
 1. Docker-compose
 
-## Install
+## Start Runners
 
-1. Copy ```.env``` file
+- Execute the script in gh-runner-1 and gh-runner-2 directories
 
-```cp .env.example .env```
+docker compose up -d
 
-2. Up containers
+## Down Runners
 
-```docker-compose up -d```
+- Execute the script in gh-runner-1 and gh-runner-2 directories
 
-## Scaling
-
-```docker-compose scale runner-node=2 runner-php=2```
+docker compose down

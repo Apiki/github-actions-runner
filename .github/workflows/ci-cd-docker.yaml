@@ -1,0 +1,115 @@
+name: Docker Build and Run - CI/CD
+
+on:
+  push:
+    branches: [ master ]
+    paths-ignore: [ README.md ]
+  workflow_dispatch:
+
+env:
+  CI_REGISTRY_IMAGE: 'apiki'
+  CONTAINER_NAME: 'github-actions-runner'
+
+jobs:
+  build:
+    if: "!contains(github.event.head_commit.message, 'skip ci')"
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3.1.0
+
+    - name: Export a .env file to environment variables
+      uses: c-py/action-dotenv-to-setenv@v4
+      with:
+        env-file: .github/.env
+
+    - name: Define Production Variables
+      if: github.ref == 'refs/heads/master'
+      run: |
+        echo "SSH_USER=$SSH_USER_PROD" >> $GITHUB_ENV
+        echo "OWNER_USER=$OWNER_USER_PROD" >> $GITHUB_ENV
+        echo "OWNER_GROUP=$OWNER_GROUP_PROD" >> $GITHUB_ENV
+        echo "SSH_IP=$SSH_IP_PROD" >> $GITHUB_ENV
+        echo "SSH_PORT=$SSH_PORT_PROD" >> $GITHUB_ENV
+        echo "RUNNERS_PATH=$RUNNERS_PATH_PROD" >> $GITHUB_ENV
+        echo "RUNNER1_PATH=$RUNNER1_PATH_PROD" >> $GITHUB_ENV
+        echo "RUNNER2_PATH=$RUNNER2_PATH_PROD" >> $GITHUB_ENV
+
+    - name: Declare some variables
+      id: vars
+      shell: bash
+      run: |
+        BRANCH=$(echo ${GITHUB_REF#refs/heads/})
+        SHA_SHORT=$(git rev-parse --short HEAD)
+        echo "image_tag=$BRANCH-$SHA_SHORT" >> $GITHUB_OUTPUT
+
+    - name: Install SSH key
+      uses: shimataro/ssh-key-action@v2.4.0
+      with:
+        key: ${{ secrets.WP_CARE_KEY }}
+        name: id_rsa
+        known_hosts: unnecessary
+        config: StrictHostKeyChecking no
+        if_key_exists: replace
+
+    - name: Change docker-compose.yml in gh-runner-1
+      if: github.ref == 'refs/heads/master' 
+      run: |
+        sed -i "s#\${CI_REGISTRY_IMAGE}#${{ env.CI_REGISTRY_IMAGE }}#" docker-compose.yaml
+        sed -i "s#\${CONTAINER_NAME}#${{ env.CONTAINER_NAME }}#" docker-compose.yaml
+        sed -i "s#\${CI_COMMIT_SHORT_SHA}#${{ steps.vars.outputs.image_tag }}#" docker-compose.yaml
+      working-directory: gh-runner-1
+
+    - name: Change docker-compose.yml in gh-runner-2
+      if: github.ref == 'refs/heads/master' 
+      run: |
+        sed -i "s#\${CI_REGISTRY_IMAGE}#${{ env.CI_REGISTRY_IMAGE }}#" docker-compose.yaml
+        sed -i "s#\${CONTAINER_NAME}#${{ env.CONTAINER_NAME }}#" docker-compose.yaml
+        sed -i "s#\${CI_COMMIT_SHORT_SHA}#${{ steps.vars.outputs.image_tag }}#" docker-compose.yaml
+      working-directory: gh-runner-2
+
+    - name: Build Container
+      if: github.ref == 'refs/heads/master' 
+      run: |
+        scp -P ${SSH_PORT} Dockerfile ${SSH_USER}@${SSH_IP}:${RUNNERS_PATH}
+        ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_IP} "sudo docker build -t ${{ env.CI_REGISTRY_IMAGE }}/${{ env.CONTAINER_NAME }}:${{ steps.vars.outputs.image_tag }} ."
+
+    - name: Down Old Containers
+      if: github.ref == 'refs/heads/master' 
+      run: |
+        ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_IP} "sudo docker compose -f ${RUNNER1_PATH}/docker-compose.yaml down"
+        ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_IP} "sudo docker compose -f ${RUNNER2_PATH}/docker-compose.yaml down"
+        
+    - name: Simule rsync - MASTER
+      if: github.ref == 'refs/heads/master' 
+      run: |
+        rsync -ahrvzKO --chown=$OWNER_USER:$OWNER_GROUP \
+          --dry-run --verbose --itemize-changes \
+          -e "ssh -p $SSH_PORT -oStrictHostKeyChecking=no" \
+          --chmod='D755,F644' \
+          ./ $SSH_USER@$SSH_IP:$RUNNERS_PATH
+          
+        rsync_status=$?
+        echo $rsync_status
+        
+        if (($rsync_status != 0)); then
+          echo 'Ocorreu um erro na simulação!'
+          exit 1
+        else
+          echo '👽 Ocorreu tudo bem na simulação!'
+        fi       
+
+    - name: Rsync - MASTER
+      if: github.ref == 'refs/heads/master'
+      run: |
+        rsync -ahrvzKO --chown=$OWNER_USER:$OWNER_GROUP \
+          -e "ssh -p $SSH_PORT -oStrictHostKeyChecking=no" \
+          --quiet --chmod='D755,F644' \
+          ./ $SSH_USER@$SSH_IP:$RUNNERS_PATH
+        echo 'Tudo certo! 🍕'        
+        
+    - name: Deploy Containers
+      if: github.ref == 'refs/heads/master' 
+      run: |
+        ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_IP} "sudo docker compose -f ${RUNNER1_PATH}/docker-compose.yaml up -d"
+        ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_IP} "sudo docker compose -f ${RUNNER2_PATH}/docker-compose.yaml up -d"
