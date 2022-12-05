@@ -71,14 +71,15 @@ jobs:
     - name: Build Container
       if: github.ref == 'refs/heads/master' 
       run: |
+        ssh -oStrictHostKeyChecking=no -p ${SSH_PORT} ${SSH_USER}@${SSH_IP} "sudo docker ps"
         scp -P ${SSH_PORT} Dockerfile ${SSH_USER}@${SSH_IP}:${RUNNERS_PATH}
-        ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_IP} "sudo docker build -t ${{ env.CI_REGISTRY_IMAGE }}/${{ env.CONTAINER_NAME }}:${{ steps.vars.outputs.image_tag }} ."
+        ssh -oStrictHostKeyChecking=no -p ${SSH_PORT} ${SSH_USER}@${SSH_IP} "sudo docker build -t ${{ env.CI_REGISTRY_IMAGE }}/${{ env.CONTAINER_NAME }}:${{ steps.vars.outputs.image_tag }} ."
 
     - name: Down Old Containers
       if: github.ref == 'refs/heads/master' 
       run: |
-        ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_IP} "sudo docker compose -f ${RUNNER1_PATH}/docker-compose.yaml down"
-        ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_IP} "sudo docker compose -f ${RUNNER2_PATH}/docker-compose.yaml down"
+        ssh -oStrictHostKeyChecking=no -p ${SSH_PORT} ${SSH_USER}@${SSH_IP} "sudo docker compose -f ${RUNNER1_PATH}/docker-compose.yaml down"
+        ssh -oStrictHostKeyChecking=no -p ${SSH_PORT} ${SSH_USER}@${SSH_IP} "sudo docker compose -f ${RUNNER2_PATH}/docker-compose.yaml down"
         
     - name: Simule rsync - MASTER
       if: github.ref == 'refs/heads/master' 
@@ -111,5 +112,5 @@ jobs:
     - name: Deploy Containers
       if: github.ref == 'refs/heads/master' 
       run: |
-        ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_IP} "sudo docker compose -f ${RUNNER1_PATH}/docker-compose.yaml up -d"
-        ssh -p ${SSH_PORT} ${SSH_USER}@${SSH_IP} "sudo docker compose -f ${RUNNER2_PATH}/docker-compose.yaml up -d"
+        ssh -oStrictHostKeyChecking=no -p ${SSH_PORT} ${SSH_USER}@${SSH_IP} "sudo docker compose -f ${RUNNER1_PATH}/docker-compose.yaml up -d"
+        ssh -oStrictHostKeyChecking=no -p ${SSH_PORT} ${SSH_USER}@${SSH_IP} "sudo docker compose -f ${RUNNER2_PATH}/docker-compose.yaml up -d"
