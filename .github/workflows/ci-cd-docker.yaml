@@ -44,7 +44,7 @@ jobs:
         echo "image_tag=$BRANCH-$SHA_SHORT" >> $GITHUB_OUTPUT
 
     - name: Install SSH key
-      uses: shimataro/ssh-key-action@v2.4.0
+      uses: shimataro/ssh-key-action@v2.5.0
       with:
         key: ${{ secrets.WP_CARE_KEY }}
         name: id_rsa
