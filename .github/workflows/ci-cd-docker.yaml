@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3.1.0
+    - uses: actions/checkout@v3.5.3
 
     - name: Export a .env file to environment variables
       uses: c-py/action-dotenv-to-setenv@v4
