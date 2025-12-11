@@ -13,15 +13,68 @@ env:
 jobs:
   build:
     if: "!contains(github.event.head_commit.message, 'skip ci')"
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
-    - uses: actions/checkout@v3.1.0
+    - uses: actions/checkout@v4
 
-    - name: Export a .env file to environment variables
-      uses: c-py/action-dotenv-to-setenv@v4
-      with:
-        env-file: .github/.env
+    - name: Load Centralized Configuration (Direct Git Clone with runner)
+      id: load-config
+      shell: bash
+      env:
+        CURRENT_REPO: ${{ github.repository }}
+      run: |
+        if [[ "${{ github.ref }}" == "refs/heads/apikidev" ]]; then
+           CTX="DEV"
+        elif [[ "${{ github.ref }}" == "refs/heads/apikistage" ]]; then
+           CTX="STAGE"
+        elif [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
+           CTX="PROD"
+        elif [[ "${{ github.ref }}" == "refs/heads/homolog" ]]; then
+           CTX="HOMOLOG"
+        else
+           echo "::warning::Branch ${{ github.ref }} não mapeada. Pulando configuração."
+           exit 0
+        fi
+        
+        echo "Ambiente detectado: $CTX"
+
+        TEMP_DIR=".centralized_vars_temp"
+        CONFIG_FILE_PATH="$TEMP_DIR/deploy-config.json"
+
+        rm -rf "$TEMP_DIR"
+
+        mkdir -p ~/.ssh
+        ssh-keyscan -H github.com >> ~/.ssh/known_hosts 2>/dev/null
+
+        git config --global --unset user.name || true
+        git config --global --unset user.email || true
+        git config --global user.name "${{ github.event.pusher.name || 'apiki-wp-care' }}"
+        git config --global user.email "${{ github.event.pusher.email || 'wpcare@apiki.com' }}"
+
+        git clone --depth 1 git@github.com:Apiki/centralized_variables.git "$TEMP_DIR"
+
+        if [ ! -f "$CONFIG_FILE_PATH" ]; then
+           echo "::error::Arquivo de configuração não encontrado após clone."
+           exit 1
+        fi
+
+        CONFIG=$(cat "$CONFIG_FILE_PATH")
+
+        echo "$CONFIG" | jq -r --arg repo "$CURRENT_REPO" --arg ctx "$CTX" \
+          '(.globals[$ctx] // {}) + (.repositories[$repo][$ctx] // {}) | to_entries | .[] | .key + "=" + .value' \
+          > env_vars.txt
+
+        echo "Limpando arquivos temporários..."
+        rm -rf "$TEMP_DIR"
+
+        if [ ! -s env_vars.txt ]; then
+           echo "::error::Nenhuma variável encontrada para $CURRENT_REPO ($CTX)."
+           exit 1
+        fi
+
+        cat env_vars.txt >> $GITHUB_ENV
+        rm env_vars.txt.1.0
 
     - name: Define Production Variables
       if: github.ref == 'refs/heads/master'
